@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: OpenTelemetry Python Lambda layer for Python 3.8 Runtime
+Mappings:
+  RegionMap:
+    us-west-1:
+      value: "arn:aws:lambda:us-west-1:611364707713:layer:py38-preview:1"
+    us-west-2:
+      value: "arn:aws:lambda:us-west-2:611364707713:layer:py38-preview:1"
+    eu-west-1:
+      value: "arn:aws:lambda:eu-west-1:611364707713:layer:py38-preview:1"
+    eu-west-2:
+      value: "arn:aws:lambda:eu-west-2:611364707713:layer:py38-preview:1"
 Resources:
   api:
     Type: AWS::Serverless::Api
@@ -23,6 +33,11 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - AmazonS3FullAccess
       Tracing: Active
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/python/otel-instrument
+      Layers:
+        - !FindInMap [RegionMap, !Ref "AWS::Region", value]
       Events:
         getEndpoint:
           Type: Api
