@@ -1,24 +1,21 @@
-name: soak-python
-
+name: integration-python
 env:
   LAYER: py38-layer
   LAYER_PATH: 'opentelemetry-lambda/python/src'
-  STACK: py38-soak
+  STACK: py38-sample
   UTILS: ${{ github.workspace }}/opentelemetry-lambda/utils/sam
 
 on:
   workflow_dispatch:
     inputs:
-      runtime:
-        description: 'soaking'
+      reserve:
+        description: 'reserve'
         required: false
-        default: 'Python3.8'
-      args:
-        description: 'soaking test args'
-        required: true
-        default: '600 5'
+        default: 'reserve'
   schedule:
-    - cron: '0 * * * *' # every day
+    - cron: '5 * * * *' # every hour
+  push:
+    branches: [ main ]
 
 jobs:
   integration-test:
@@ -26,6 +23,7 @@ jobs:
 
     strategy:
       matrix:
+#        region: [ us-west-2, cn-northwest-1 ]
         region: [ us-west-2 ]
 
     steps:
@@ -43,7 +41,6 @@ jobs:
         run: |
           cp -rf adot/* opentelemetry-lambda/
 
-      # set aws creds for CN regions and standard regions
       - name: Configure AWS Credentials CN
         uses: aws-actions/configure-aws-credentials@v1
         if: ${{ matrix.region == 'cn-north-1' ||  matrix.region == 'cn-northwest-1'}}
@@ -73,7 +70,7 @@ jobs:
 
       - name: deploy layer
         run: |
-          layerArn=$(${{ env.UTILS }}/layer.sh -a)
+          layerArn=$($UTILS/layer.sh -a)
           echo $layerArn
           if [[ $layerArn == "null" ]]; then
             echo "building and deploying layer"
@@ -82,15 +79,15 @@ jobs:
           else
             echo "skip deploy layer"
           fi
-          layerArn=$(${{ env.UTILS }}/layer.sh -a)
+          layerArn=$($UTILS/layer.sh -a)
           echo $layerArn
 
-#      - name: Checkout test framework
-#        uses: actions/checkout@v2
-#        if: ${{ success() }}
-#        with:
-#          repository: aws-observability/aws-otel-test-framework
-#          path: test-framework
+      - name: Checkout test framework
+        uses: actions/checkout@v2
+        if: ${{ success() }}
+        with:
+          repository: aws-observability/aws-otel-test-framework
+          path: test-framework
 
       - name: Set sample stack name
         run: |
@@ -98,14 +95,18 @@ jobs:
 
       - name: deploy sample
         continue-on-error: true
-        working-directory: opentelemetry-lambda/python/sample-python
+        working-directory: opentelemetry-lambda/python/sample-xray
         run: |
           echo $OTEL_LAMBDA_STACK
           ./run.sh
 
       - name: validate sample
         run: |
-          echo "TODO"
+          endpoint=$(${{ env.UTILS }}/endpoint.sh)
+          curl $endpoint
+          cp opentelemetry-lambda/python/sample-xray/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
+          cd test-framework
+          ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
 
       - name: install otel layer to sample
         run: |
@@ -114,39 +115,13 @@ jobs:
           ${{ env.UTILS }}/update.sh -l $layerArn
           ${{ env.UTILS }}/update.sh -e "Variables={OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector-config/config.yaml,AWS_LAMBDA_EXEC_WRAPPER=/opt/python/otel-instrument}"
 
-#      - name: validate layer
-#        run: |
-#          endpoint=$(${{ env.UTILS }}/endpoint.sh)
-#          curl $endpoint
-#          cp opentelemetry-lambda/python/sample-python/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
-#          cd test-framework
-#          ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
-
-      - name: Enable Lambda Insight
-        working-directory: ${{ env.UTILS }}
-        if: ${{ success() }}
+      - name: validate layer
         run: |
-          ./update.sh -a "arn:aws:lambda:us-west-2:580247275435:layer:LambdaInsightsExtension:10"
-
-      - name: manually trigger soaking test
-        working-directory: ${{ env.UTILS }}
-        if: ${{ success() && github.event_name == 'workflow_dispatch' }}
-        run: |
-          pip install boto3
-          functionName=$(./function.sh)
-          endpoint=$(./endpoint.sh)
-          python3 ./soak.py $functionName ${{ github.event.inputs.args }} $endpoint
-          echo "Soaking test done."
-
-      - name: scheduled soaking test
-        working-directory: ${{ env.UTILS }}
-        if: ${{ success() && github.event_name != 'workflow_dispatch' }}
-        run: |
-          pip install boto3
-          functionName=$($UTILS/function.sh)
-          endpoint=$($UTILS/endpoint.sh)
-          python3 soak.py $functionName 18000 5 $endpoint
-          echo "Soaking test done."
+          endpoint=$(${{ env.UTILS }}/endpoint.sh)
+          curl $endpoint
+          cp opentelemetry-lambda/python/sample-xray/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
+          cd test-framework
+          ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
 
       - name: clean sample
         run: |

@@ -66,7 +66,7 @@ jobs:
 
       - name: deploy sample
         continue-on-error: true
-        working-directory: opentelemetry-lambda/python/sample-python
+        working-directory: opentelemetry-lambda/python/sample-xray
         run: |
           echo $OTEL_LAMBDA_STACK
           ./run.sh
@@ -75,7 +75,7 @@ jobs:
         run: |
           endpoint=$(${{ env.UTILS }}/endpoint.sh)
           curl $endpoint
-          cp opentelemetry-lambda/python/sample-python/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
+          cp opentelemetry-lambda/python/sample-xray/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
           cd test-framework
           ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
 
