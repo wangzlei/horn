@@ -115,14 +115,14 @@ jobs:
 #          aws s3 rm s3://$BUCKET_NAME/layer.zip
 #          aws s3 rb s3://$BUCKET_NAME
 #          echo $toLayerArn
-
-      - name: public layer
-        env:
-          OTEL_LAMBDA_LAYER: ${{ github.event.inputs.toLayer }}
-        run: |
-          layerVersion=$($UTILS/layer.sh -v)
-          echo $layerVersion
-          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersion
+#
+#      - name: public layer
+#        env:
+#          OTEL_LAMBDA_LAYER: ${{ github.event.inputs.toLayer }}
+#        run: |
+#          layerVersion=$($UTILS/layer.sh -v)
+#          echo $layerVersion
+#          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersion
 
       - name: get layerARN
         env:
