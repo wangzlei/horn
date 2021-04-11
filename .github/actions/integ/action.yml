@@ -1,0 +1,144 @@
+name: 'integration composite'
+description: 'integration compositee'
+inputs:
+  layerNamePrefix:
+    description: 'layer name prefix'
+    required: true
+    default: 'otel-layer'
+  layerSrcPath:
+    description: 'layer src path'
+    required: true
+    default: 'default'
+  sampleNamePrefix:
+    description: 'sample stack name prefix'
+    required: true
+    default: 'otel-stack'
+  sampleSrcPath:
+    description: 'sample src path'
+    required: true
+    default: 'default'
+outputs:
+  reserved:
+    description: 'reserved'
+    value: 'reserved'
+
+env:
+  SAMPLE: ${{ inputs.sampleNamePrefix }}
+  SAMPLE_PATH: ${{ inputs.sampleSrcPath }}
+  LAYER: ${{ inputs.layerNamePrefix }}
+  LAYER_PATH: ${{ inputs.layerSrcPath }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout submodules
+      shell: bash
+      run: |
+        git submodule update --init --recursive
+        cd opentelemetry-lambda
+        git fetch
+        git merge origin/master
+
+    # set aws creds for CN regions and standard regions
+    - name: Configure AWS Credentials CN
+      uses: aws-actions/configure-aws-credentials@v1
+      if: ${{ matrix.region == 'cn-north-1' ||  matrix.region == 'cn-northwest-1'}}
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TEST_CN }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_TEST_CN }}
+        mask-aws-account-id: false
+        aws-region: ${{matrix.region}}
+    - name: Configure AWS Credentials standard
+      uses: aws-actions/configure-aws-credentials@v1
+      if: ${{ matrix.region != 'cn-north-1' &&  matrix.region != 'cn-northwest-1'}}
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TEST }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_TEST }}
+        mask-aws-account-id: false
+        aws-region: ${{matrix.region}}
+
+    # add aws custom logic here
+    - name: adot custom
+      shell: bash
+      run: |
+        cp -rf adot/* opentelemetry-lambda/
+
+    # echo "OTEL_LAMBDA_STACK=$STACK-$key2-$key1" >> $GITHUB_ENV
+    # echo "OTEL_LAMBDA_LAYER=$LAYER-$key2-$key1" >> $GITHUB_ENV
+    - name: Set git commit sha of opentelemetry-lambda to stack and layer KEY
+      shell: bash
+      run: |
+        key1=$(git rev-parse --short HEAD)
+        cd opentelemetry-lambda
+        key2=$(git rev-parse --short HEAD)
+        echo "OTEL_LAMBDA_STACK=$SAMPLE-$key2-$key1" >> $GITHUB_ENV
+        echo ${{ env.OTEL_LAMBDA_STACK }}
+        echo "OTEL_LAMBDA_LAYER=$LAYER-$key2-$key1" >> $GITHUB_ENV
+        echo ${{ env.OTEL_LAMBDA_LAYER }}
+
+    - name: check is SAM or TF, link to adaptor path
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/$LAYER_PATH
+        if [[ -f "template.yml" ]] || [[ -f "template.yaml" ]]; then
+          echo "LAYER_UTILS=${{ github.workspace }}/opentelemetry-lambda/utils/sam" >> $GITHUB_ENV
+        fi
+        cd ${{ github.workspace }}/$SAMPLE_PATH
+        if [[ -f "template.yml" ]] || [[ -f "template.yaml" ]]; then
+          echo "SAMPLE_UTILS=${{ github.workspace }}/opentelemetry-lambda/utils/sam" >> $GITHUB_ENV
+        fi
+
+    - name: deploy sample
+      continue-on-error: true
+      shell: bash
+      run: |
+        cd $SAMPLE_PATH
+        ./run.sh
+
+    # layer is immutable, if the layer key(name) exists, no need build again
+    - name: deploy layer
+      shell: bash
+      run: |
+        layerArn=$($LAYER_UTILS/layer.sh -a)
+        echo $layerArn
+        if [ $layerArn == "null" ]
+        then
+          cd $LAYER_PATH
+          ./run.sh
+        else
+          echo "skip building layer"
+        fi
+
+    - name: validate sample
+      shell: bash
+      run: |
+        echo "TODO"
+
+    - name: install otel layer to sample
+      shell: bash
+      run: |
+        layerArn=$($LAYER_UTILS/layer.sh -a)
+        echo $layerArn
+        $SAMPLE_UTILS/update.sh -l $layerArn
+        $SAMPLE_UTILS/update.sh -e "Variables={OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector-config/config.yaml,AWS_LAMBDA_EXEC_WRAPPER=/opt/python/otel-instrument}"
+
+    - name: Checkout test framework
+      uses: actions/checkout@v2
+      if: ${{ success() }}
+      with:
+        repository: aws-observability/aws-otel-test-framework
+        path: test-framework
+
+    - name: validate layer
+      shell: bash
+      run: |
+        endpoint=$($SAMPLE_UTILS/endpoint.sh)
+        echo $endpoint
+        cp $SAMPLE_PATH/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
+        cd test-framework
+        ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
+
+    - name: clean
+      shell: bash
+      run: |
+        $SAMPLE_UTILS/clean.sh
