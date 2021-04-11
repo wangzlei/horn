@@ -64,12 +64,12 @@ jobs:
           cd opentelemetry-lambda
           echo "OTEL_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Set layer name
-        run: |
-          echo "OTEL_LAMBDA_LAYER=$LAYER-001" >> $GITHUB_ENV
 #      - name: Set layer name
 #        run: |
-#          echo "OTEL_LAMBDA_LAYER=$LAYER-$OTEL_SHA-$ADOT_SHA" >> $GITHUB_ENV
+#          echo "OTEL_LAMBDA_LAYER=$LAYER-001" >> $GITHUB_ENV
+      - name: Set layer name
+        run: |
+          echo "OTEL_LAMBDA_LAYER=$LAYER-$OTEL_SHA-$ADOT_SHA" >> $GITHUB_ENV
 
       - name: deploy layer
         run: |
