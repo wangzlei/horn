@@ -10,7 +10,7 @@ on:
       fromLayer:
         description: 'Soaked layer name in test account'
         required: false
-        default: 'py38-layer'
+        default: 'py38-layer-86558a5-2fc2419'
       toLayer:
         description: 'Layer name publishing to Prod account'
         required: true
