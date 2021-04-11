@@ -13,7 +13,7 @@ on:
         required: false
         default: 'reserve'
   schedule:
-    - cron: '0 * * * *' # every hour
+    - cron: '5 * * * *' # every hour
   push:
     branches: [ main ]
 
@@ -64,9 +64,6 @@ jobs:
           cd opentelemetry-lambda
           echo "OTEL_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-#      - name: Set layer name
-#        run: |
-#          echo "OTEL_LAMBDA_LAYER=$LAYER-001" >> $GITHUB_ENV
       - name: Set layer name
         run: |
           echo "OTEL_LAMBDA_LAYER=$LAYER-$OTEL_SHA-$ADOT_SHA" >> $GITHUB_ENV
@@ -105,7 +102,11 @@ jobs:
 
       - name: validate sample
         run: |
-          echo "TODO"
+          endpoint=$(${{ env.UTILS }}/endpoint.sh)
+          curl $endpoint
+          cp opentelemetry-lambda/python/sample-python/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
+          cd test-framework
+          ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
 
       - name: install otel layer to sample
         run: |
@@ -121,24 +122,6 @@ jobs:
           cp opentelemetry-lambda/python/sample-python/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
           cd test-framework
           ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
-
-      # move to soak
-#      - name: Enable Lambda Insight
-#        working-directory: ${{ env.UTILS }}
-#        if: ${{ success() }}
-#        run: |
-#          ./update.sh -a "arn:aws:lambda:us-west-2:580247275435:layer:LambdaInsightsExtension:10"
-#
-#      - name: scheduled soaking test
-#        working-directory: ${{ env.UTILS }}
-#        run: |
-#          pip install boto3
-#          functionName=$($UTILS/function.sh)
-#          endpoint=$($UTILS/endpoint.sh)
-#          echo $functionName
-#          echo $endpoint
-#          python3 soak.py $functionName 600 5 $endpoint
-#          echo "Soaking test done."
 
       - name: clean sample
         run: |

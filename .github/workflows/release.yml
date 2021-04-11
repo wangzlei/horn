@@ -58,7 +58,6 @@ jobs:
           URL=$(aws lambda get-layer-version-by-arn --arn $layerArn --query Content.Location --output text)
           curl $URL -o layer.zip
 
-# TODO: update to Prod account
   publish-layer:
     needs: cache-layer-from-test
 
@@ -106,23 +105,23 @@ jobs:
         run: |
           exit 1
 
-#      - name: clone
-#        run: |
-#          BUCKET_NAME="lambda-artifacts"-$(dd if=/dev/random bs=8 count=1 2>/dev/null | od -An -tx1 | tr -d ' \t\n')
-#          aws s3 mb s3://$BUCKET_NAME
-#          aws s3 cp layer.zip s3://$BUCKET_NAME
-#          toLayerArn=$(aws lambda publish-layer-version --layer-name ${{ github.event.inputs.toLayer }} --content S3Bucket=$BUCKET_NAME,S3Key=layer.zip --query 'LayerVersionArn' --output text)
-#          aws s3 rm s3://$BUCKET_NAME/layer.zip
-#          aws s3 rb s3://$BUCKET_NAME
-#          echo $toLayerArn
-#
-#      - name: public layer
-#        env:
-#          OTEL_LAMBDA_LAYER: ${{ github.event.inputs.toLayer }}
-#        run: |
-#          layerVersion=$($UTILS/layer.sh -v)
-#          echo $layerVersion
-#          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersion
+      - name: clone
+        run: |
+          BUCKET_NAME="lambda-artifacts"-$(dd if=/dev/random bs=8 count=1 2>/dev/null | od -An -tx1 | tr -d ' \t\n')
+          aws s3 mb s3://$BUCKET_NAME
+          aws s3 cp layer.zip s3://$BUCKET_NAME
+          toLayerArn=$(aws lambda publish-layer-version --layer-name ${{ github.event.inputs.toLayer }} --content S3Bucket=$BUCKET_NAME,S3Key=layer.zip --query 'LayerVersionArn' --output text)
+          aws s3 rm s3://$BUCKET_NAME/layer.zip
+          aws s3 rb s3://$BUCKET_NAME
+          echo $toLayerArn
+
+      - name: public layer
+        env:
+          OTEL_LAMBDA_LAYER: ${{ github.event.inputs.toLayer }}
+        run: |
+          layerVersion=$($UTILS/layer.sh -v)
+          echo $layerVersion
+          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersion
 
       - name: get layerARN
         env:

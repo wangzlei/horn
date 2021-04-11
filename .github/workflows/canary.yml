@@ -6,8 +6,6 @@ env:
 on:
   schedule:
     - cron: '15 * * * *' # every hour
-  push:
-    branches: [ main ]
 
 jobs:
   canary-test:
