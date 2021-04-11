@@ -22,7 +22,7 @@ on:
       regions:
         description: 'regions to be deployed'
         retuired: true
-        default: {"region": [ "us-east-1"]}
+        default: "{\"region\": [ \"us-east-1\"]}"
 
 
 jobs:
