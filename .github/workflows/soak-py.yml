@@ -145,7 +145,7 @@ jobs:
           pip install boto3
           functionName=$($UTILS/function.sh)
           endpoint=$($UTILS/endpoint.sh)
-          python3 soak.py $functionName 18000 5 $endpoint
+          python3 soak.py $functionName 1800 5 $endpoint
           echo "Soaking test done."
 
       - name: clean sample
