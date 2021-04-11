@@ -1,30 +1,21 @@
 name: canary-python
 env:
-  LAYER: py38-layer
-  LAYER_PATH: 'opentelemetry-lambda/python/src'
-  STACK: py38-sample
+  STACK: py38-canary
   UTILS: ${{ github.workspace }}/opentelemetry-lambda/utils/sam
 
 on:
-  workflow_dispatch:
-    inputs:
-      reserve:
-        description: 'reserve'
-        required: false
-        default: 'reserve'
-#  schedule:
-#    - cron: '0 * * * *' # every hour
-#  push:
-#    branches: [ main ]
+  schedule:
+    - cron: '15 * * * *' # every hour
+  push:
+    branches: [ main ]
 
 jobs:
-  integration-test:
+  canary-test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        #        region: [ us-west-2, cn-northwest-1 ]
-        region: [ us-west-2 ]
+        region: [ us-west-2, us-west-1, eu-west-1, eu-west-2 ]
 
     steps:
       - name: Checkout repository
@@ -64,27 +55,6 @@ jobs:
           cd opentelemetry-lambda
           echo "OTEL_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Set layer name
-        run: |
-          echo "OTEL_LAMBDA_LAYER=$LAYER-001" >> $GITHUB_ENV
-      #      - name: Set layer name
-      #        run: |
-      #          echo "OTEL_LAMBDA_LAYER=$LAYER-$OTEL_SHA-$ADOT_SHA" >> $GITHUB_ENV
-
-      - name: deploy layer
-        run: |
-          layerArn=$(${{ env.UTILS }}/layer.sh -a)
-          echo $layerArn
-          if [[ $layerArn == "null" ]]; then
-            echo "building and deploying layer"
-            cd $LAYER_PATH
-            ./run.sh
-          else
-            echo "skip deploy layer"
-          fi
-          layerArn=$(${{ env.UTILS }}/layer.sh -a)
-          echo $layerArn
-
       - name: Checkout test framework
         uses: actions/checkout@v2
         if: ${{ success() }}
@@ -105,40 +75,11 @@ jobs:
 
       - name: validate sample
         run: |
-          echo "TODO"
-
-      - name: install otel layer to sample
-        run: |
-          layerArn=$(${{ env.UTILS }}/layer.sh -a)
-          echo $layerArn
-          ${{ env.UTILS }}/update.sh -l $layerArn
-          ${{ env.UTILS }}/update.sh -e "Variables={OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector-config/config.yaml,AWS_LAMBDA_EXEC_WRAPPER=/opt/python/otel-instrument}"
-
-      - name: validate layer
-        run: |
           endpoint=$(${{ env.UTILS }}/endpoint.sh)
           curl $endpoint
           cp opentelemetry-lambda/python/sample-python/test/expected.mustache test-framework/validator/src/main/resources/expected-data-template/lambdaExpectedTrace.mustache
           cd test-framework
           ./gradlew :validator:run  --args="-c default-lambda-validation.yml --endpoint $endpoint --region $AWS_REGION"
-
-      # move to soak
-      #      - name: Enable Lambda Insight
-      #        working-directory: ${{ env.UTILS }}
-      #        if: ${{ success() }}
-      #        run: |
-      #          ./update.sh -a "arn:aws:lambda:us-west-2:580247275435:layer:LambdaInsightsExtension:10"
-      #
-      #      - name: scheduled soaking test
-      #        working-directory: ${{ env.UTILS }}
-      #        run: |
-      #          pip install boto3
-      #          functionName=$($UTILS/function.sh)
-      #          endpoint=$($UTILS/endpoint.sh)
-      #          echo $functionName
-      #          echo $endpoint
-      #          python3 soak.py $functionName 600 5 $endpoint
-      #          echo "Soaking test done."
 
       - name: clean sample
         run: |
