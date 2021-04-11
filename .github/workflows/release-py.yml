@@ -126,8 +126,7 @@ jobs:
         run: |
           layerVersion=$($UTILS/layer.sh -v)
           echo $layerVersion
-          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersion
-          sleep 120
+          aws lambda add-layer-version-permission --layer-name ${{ github.event.inputs.toLayer }} --version-number $layerVersion --principal "*" --statement-id publish --action lambda:GetLayerVersio
 
       - name: get layerARN
         env:
@@ -210,12 +209,13 @@ jobs:
         continue-on-error: true
         working-directory: opentelemetry-lambda/python/sample-xray
         run: |
+          $UTILS/clean.sh
           echo $OTEL_LAMBDA_STACK
           ./run.sh
 
       - name: validate sample
         run: |
-          echo "TODO"
+          echo "Skip"
 
       - name: download layerARNs
         uses: actions/download-artifact@v2
