@@ -4,7 +4,7 @@ set -e
 set -u
 
 region=${AWS_REGION-$(aws configure get region)}
-stacks=$(aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE --query 'StackSummaries[*].StackName' --output text)
+stacks=$(aws cloudformation list-stacks --region $region --query 'StackSummaries[*].StackName' --output text)
 
 echo $stacks
 for stack in $stacks
