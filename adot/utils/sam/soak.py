@@ -105,5 +105,5 @@ if __name__ == '__main__':
     else:
         print('Soaking test succeed!')
         # If no problem, delete alarm
-        # cloudwatch.delete_alarms(AlarmNames=[memory_alarm, cpu_alarm])
+        cloudwatch.delete_alarms(AlarmNames=[memory_alarm, cpu_alarm])
         exit(0)

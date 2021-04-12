@@ -23,7 +23,6 @@ jobs:
 
     strategy:
       matrix:
-#        region: [ us-west-2, cn-northwest-1 ]
         region: [ us-west-2 ]
 
     steps:
