@@ -46,6 +46,10 @@ jobs:
         run: |
           python3 integration/invalid_input.py
 
+      - name: check docker stats
+        run: |
+          docker stats
+
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
         run: |
@@ -78,10 +82,10 @@ jobs:
           else
             aws cloudwatch put-metric-data --metric-name PullImageFailureFromDockerhub --dimensions failure=rate --namespace MonitorDaemon --value 0 --timestamp $(date +%s)
           fi
-#      - name: Run daemon image
-#        run: |
-#          docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp amazon/aws-xray-daemon:3.3.0 -o -l dev -n us-west-2 -b 0.0.0.0:2000 &
-#          sleep 30
+      - name: Run daemon image
+        run: |
+          docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp amazon/aws-xray-daemon:3.3.0 -o -l dev -n us-west-2 -b 0.0.0.0:2000 &
+          sleep 30
 
       - name: Send invalid request 1
         run: |
@@ -89,6 +93,10 @@ jobs:
       - name: Send invalid request 2
         run: |
           python3 integration/invalid_input.py
+
+      - name: check docker stats
+        run: |
+          docker stats
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
