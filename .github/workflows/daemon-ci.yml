@@ -1,9 +1,7 @@
 name: Continuous Monitoring of Dockerhub and public ECR
 on:
   schedule:
-    - cron:  '0 */1 * * *'
-  push:
-    branches: [ main ]
+    - cron:  '0 0 0 * *'
 
 jobs:
   monitor-ecr:
