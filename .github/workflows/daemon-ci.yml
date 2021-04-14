@@ -37,8 +37,15 @@ jobs:
           fi
       - name: Run daemon image
         run: |
-          docker run --name xray-daemon public.ecr.aws/xray/aws-xray-daemon:latest -o -n us-west-2 &
+          docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp --name xray-daemon public.ecr.aws/xray/aws-xray-daemon:latest -o -n us-west-2 -b 0.0.0.0:2000 &
           sleep 30
+
+      - name: Send invalid request
+        run: |
+          docker stats --no-stream
+          python3 integration/invalid_input.py
+          sleep 10
+          docker stats --no-stream
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -49,12 +56,6 @@ jobs:
             aws cloudwatch put-metric-data --metric-name DaemonImageStartupFailureFromECR --dimensions failure=rate --namespace MonitorDaemon --value 0 --timestamp $(date +%s)
           fi
 
-      - name: Send invalid request
-        run: |
-          docker stats --no-stream
-          python3 integration/invalid_input.py
-          sleep 10
-          docker stats --no-stream
   monitor-dockerhub:
     name: Monitor docker hub
     runs-on: ubuntu-latest
@@ -81,8 +82,15 @@ jobs:
           fi
       - name: Run daemon image
         run: |
-          docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp amazon/aws-xray-daemon:3.3.0 -o -l dev -n us-west-2 -b 0.0.0.0:2000 &
+          docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp --name xray-daemon amazon/aws-xray-daemon:3.3.0 -o -n us-west-2 -b 0.0.0.0:2000 &
           sleep 30
+
+      - name: Send invalid request
+        run: |
+          docker stats --no-stream
+          python3 integration/invalid_input.py
+          sleep 10
+          docker stats --no-stream
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -92,10 +100,3 @@ jobs:
           else
             aws cloudwatch put-metric-data --metric-name DaemonImageStartupFailureFromDockerhub --dimensions failure=rate --namespace MonitorDaemon --value 0 --timestamp $(date +%s)
           fi
-
-      - name: Send invalid request
-        run: |
-          docker stats --no-stream
-          python3 integration/invalid_input.py
-          sleep 10
-          docker stats --no-stream
