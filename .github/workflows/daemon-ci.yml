@@ -52,12 +52,7 @@ jobs:
       - name: Send invalid request
         run: |
           docker stats --no-stream
-          python3
-          import socket
-          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          sock.setblocking(0)
-          sock.sendto('{"format":"json","version":1}\nx'.encode("utf8"), ("127.0.0.1", 2000))
-          exit()
+          python3 integration/invalid_input.py
           docker stats --no-stream
   monitor-dockerhub:
     name: Monitor docker hub
@@ -100,10 +95,5 @@ jobs:
       - name: Send invalid request
         run: |
           docker stats --no-stream
-          python3
-          import socket
-          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-          sock.setblocking(0)
-          sock.sendto('{"format":"json","version":1}\nx'.encode("utf8"), ("127.0.0.1", 2000))
-          exit()
+          python3 integration/invalid_input.py
           docker stats --no-stream
