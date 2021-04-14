@@ -40,7 +40,9 @@ jobs:
           sleep 30
       - name: Send invalid request
         run: |
-          python3 --version
+          ls -l ./
+          ls -l ./github/
+          python3 ./github/integration/invalid_input.py
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
