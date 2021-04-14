@@ -40,21 +40,6 @@ jobs:
           docker run --name xray-daemon public.ecr.aws/xray/aws-xray-daemon:latest -o -n us-west-2 &
           sleep 30
 
-      - name: check docker stats
-        run: |
-          docker stats --no-stream
-          
-      - name: Send invalid request
-        run: |
-          echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
-      - name: Send invalid request 2
-        run: |
-          python3 integration/invalid_input.py
-
-      - name: check docker stats
-        run: |
-          docker stats --no-stream
-
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
         run: |
@@ -63,6 +48,17 @@ jobs:
           else
             aws cloudwatch put-metric-data --metric-name DaemonImageStartupFailureFromECR --dimensions failure=rate --namespace MonitorDaemon --value 0 --timestamp $(date +%s)
           fi
+
+      - name: Send invalid request
+        run: |
+          docker stats --no-stream
+          python3
+          import socket
+          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          sock.setblocking(0)
+          sock.sendto('{"format":"json","version":1}\nx'.encode("utf8"), ("127.0.0.1", 2000))
+          exit()
+          docker stats --no-stream
   monitor-dockerhub:
     name: Monitor docker hub
     runs-on: ubuntu-latest
@@ -92,21 +88,6 @@ jobs:
           docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp amazon/aws-xray-daemon:3.3.0 -o -l dev -n us-west-2 -b 0.0.0.0:2000 &
           sleep 30
 
-      - name: check docker stats
-        run: |
-          docker stats --no-stream
-
-      - name: Send invalid request 1
-        run: |
-          echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
-      - name: Send invalid request 2
-        run: |
-          python3 integration/invalid_input.py
-
-      - name: check docker stats
-        run: |
-          docker stats --no-stream
-
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
         run: |
@@ -115,3 +96,14 @@ jobs:
           else
             aws cloudwatch put-metric-data --metric-name DaemonImageStartupFailureFromDockerhub --dimensions failure=rate --namespace MonitorDaemon --value 0 --timestamp $(date +%s)
           fi
+
+      - name: Send invalid request
+        run: |
+          docker stats --no-stream
+          python3
+          import socket
+          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          sock.setblocking(0)
+          sock.sendto('{"format":"json","version":1}\nx'.encode("utf8"), ("127.0.0.1", 2000))
+          exit()
+          docker stats --no-stream
