@@ -39,6 +39,11 @@ jobs:
         run: |
           docker run --name xray-daemon public.ecr.aws/xray/aws-xray-daemon:latest -o -n us-west-2 &
           sleep 30
+
+      - name: check docker stats
+        run: |
+          docker stats --no-stream
+          
       - name: Send invalid request
         run: |
           echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
@@ -48,7 +53,7 @@ jobs:
 
       - name: check docker stats
         run: |
-          docker stats
+          docker stats --no-stream
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -87,6 +92,10 @@ jobs:
           docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -p 0.0.0.0:2000:2000/udp amazon/aws-xray-daemon:3.3.0 -o -l dev -n us-west-2 -b 0.0.0.0:2000 &
           sleep 30
 
+      - name: check docker stats
+        run: |
+          docker stats --no-stream
+
       - name: Send invalid request 1
         run: |
           echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
@@ -96,7 +105,7 @@ jobs:
 
       - name: check docker stats
         run: |
-          docker stats
+          docker stats --no-stream
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
