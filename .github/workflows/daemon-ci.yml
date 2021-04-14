@@ -53,6 +53,7 @@ jobs:
         run: |
           docker stats --no-stream
           python3 integration/invalid_input.py
+          sleep 10
           docker stats --no-stream
   monitor-dockerhub:
     name: Monitor docker hub
@@ -96,4 +97,5 @@ jobs:
         run: |
           docker stats --no-stream
           python3 integration/invalid_input.py
+          sleep 10
           docker stats --no-stream
