@@ -10,6 +10,7 @@ jobs:
     name: Monitor public ECR
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -41,6 +42,9 @@ jobs:
       - name: Send invalid request
         run: |
           echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
+      - name: Send invalid request 2
+        run: |
+          python3 integration/invalid_input.py
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -54,6 +58,7 @@ jobs:
     name: Monitor docker hub
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -81,6 +86,9 @@ jobs:
       - name: Send invalid request 1
         run: |
           echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
+      - name: Send invalid request 2
+        run: |
+          python3 integration/invalid_input.py
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
