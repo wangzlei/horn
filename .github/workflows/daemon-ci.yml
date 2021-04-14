@@ -40,9 +40,7 @@ jobs:
           sleep 30
       - name: Send invalid request
         run: |
-          ls -l ./
-          ls -l ./github/
-          python3 ./github/integration/invalid_input.py
+          python3 ./integration/invalid_input.py
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -79,6 +77,11 @@ jobs:
         run: |
           docker run --name xray-daemon amazon/aws-xray-daemon:latest -o -n us-west-2 &
           sleep 30
+
+      - name: Send invalid request 1
+          run: |
+            echo "This is my data" > /dev/udp/127.0.0.1/2000
+
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
         run: |
