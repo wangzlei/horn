@@ -40,7 +40,7 @@ jobs:
           sleep 30
       - name: Send invalid request
         run: |
-          echo "This is my data" > /dev/udp/127.0.0.1/2000git 
+          echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
@@ -80,7 +80,7 @@ jobs:
 
       - name: Send invalid request 1
         run: |
-          echo "This is my data" > /dev/udp/127.0.0.1/2000
+          echo "{\"format\":\"json\",\"version\":1}\nx" > /dev/udp/127.0.0.1/2000
 
       - name: Publish metrics on daemon startup
         if: ${{ always() }}
