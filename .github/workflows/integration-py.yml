@@ -12,8 +12,8 @@ on:
         description: 'reserve'
         required: false
         default: 'reserve'
-  schedule:
-    - cron: '5 * * * *' # every hour
+#  schedule:
+#    - cron: '5 * * * *' # every hour
   push:
     branches: [ main ]
 
