@@ -28,13 +28,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          submodules: true
 
-      - name: Checkout submodules
-        run: |
-          git submodule update --init --recursive
-          cd opentelemetry-lambda
-          git fetch
-          git merge origin/master
+#      - name: Checkout submodules
+#        run: |
+#          git submodule update --init --recursive
+#          cd opentelemetry-lambda
+#          git fetch
+#          git merge origin/master
 
       - name: adot custom
         run: |

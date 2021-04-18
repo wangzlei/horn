@@ -1,43 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: OpenTelemetry Python Lambda layer for Python 3.8 Runtime
-Mappings:
-  RegionMap:
-    us-east-1:
-      value: "arn:aws:lambda:us-east-1:611364707713:layer:py38-preview:5"
-    us-east-2:
-      value: "arn:aws:lambda:us-east-2:611364707713:layer:py38-preview:5"
-    us-west-1:
-      value: "arn:aws:lambda:us-west-1:611364707713:layer:py38-preview:5"
-    us-west-2:
-      value: "arn:aws:lambda:us-west-2:611364707713:layer:py38-preview:5"
-    ap-south-1:
-      value: "arn:aws:lambda:ap-south-1:611364707713:layer:py38-preview:5"
-    ap-northeast-3:
-      value: "arn:aws:lambda:ap-northeast-3:611364707713:layer:py38-preview:5"
-    ap-northeast-2:
-      value: "arn:aws:lambda:ap-northeast-2:611364707713:layer:py38-preview:5"
-    ap-southeast-1:
-      value: "arn:aws:lambda:ap-southeast-1:611364707713:layer:py38-preview:5"
-    ap-southeast-2:
-      value: "arn:aws:lambda:ap-southeast-2:611364707713:layer:py38-preview:5"
-    ap-northeast-1:
-      value: "arn:aws:lambda:ap-northeast-1:611364707713:layer:py38-preview:5"
-    ca-central-1:
-      value: "arn:aws:lambda:ca-central-1:611364707713:layer:py38-preview:5"
-    eu-central-1:
-      value: "arn:aws:lambda:eu-central-1:611364707713:layer:py38-preview:5"
-    eu-west-1:
-      value: "arn:aws:lambda:eu-west-1:611364707713:layer:py38-preview:5"
-    eu-west-2:
-      value: "arn:aws:lambda:eu-west-2:611364707713:layer:py38-preview:5"
-    eu-west-3:
-      value: "arn:aws:lambda:eu-west-3:611364707713:layer:py38-preview:5"
-    eu-north-1:
-      value: "arn:aws:lambda:eu-north-1:611364707713:layer:py38-preview:5"
-    sa-east-1:
-      value: "arn:aws:lambda:sa-east-1:611364707713:layer:py38-preview:5"
 Resources:
+  layer:
+    Type: AWSUtility::CloudFormation::CommandRunner
+    Properties:
+      Command:
+        Fn::Sub: '../layerArn.sh'
   api:
     Type: AWS::Serverless::Api
     Properties:
@@ -63,7 +32,7 @@ Resources:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/python/otel-instrument
       Layers:
-        - !FindInMap [RegionMap, !Ref "AWS::Region", value]
+        - Fn::GetAtt: layer.Output
       Events:
         getEndpoint:
           Type: Api
