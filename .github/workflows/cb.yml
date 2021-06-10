@@ -1,0 +1,13 @@
+name: Whatss xxxxx
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '*/10 * * * *'
+
+jobs:
+  smoke-tests:
+    name: Whatss xxxxx
+    runs-on: ubuntu-latest
+    steps:
+      - name: xx
+        run : echo "xx"
