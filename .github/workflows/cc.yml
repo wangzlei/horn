@@ -24,5 +24,5 @@ jobs:
 
           curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sigstore" | jq -r '.value' > $AWS_WEB_IDENTITY_TOKEN_FILE
 
-    - name: bb
+      - name: bb
         run : aws cloudwatch put-metric-data --metric-name XRayJavaSDKDistributionUnavailability --dimensions failure=rate --namespace MonitorSDK --value 10 --timestamp $(date +%s)
